@@ -1,0 +1,56 @@
+Prompt: Develop an automated process for backing up data from ServiceNow instances to AWS S3. This process should ensure that critical information is securely stored and can be restored in case of data loss. The implementation will utilize a Script Include to handle the backup process.
+
+Structure: Outline the steps for designing and implementing this backup process, focusing on AWS S3 integration, security, and restoration procedures.
+
+Expected Output:
+Define Backup Scope: Identify key data to back up, such as incident records, change requests, and custom tables.
+Use GlideRecord to extract data from ServiceNow tables.** - Create a Script Include for AWS S3 Backup: Implement the following code in a Script Include in ServiceNow:
+
+```var S3Backup = Class.create();
+S3Backup.prototype = {
+    initialize: function() {
+    },
+
+    uploadBackup: function(exportData) {
+        var bucketName = 'your-bucket-name';
+        var fileName = 'backups/incident_backup_' + Date.now() + '.json';
+
+        // Create the S3 URL
+        var url = 'https://' + bucketName + '.s3.amazonaws.com/' + fileName;
+
+        // Create a new REST Message
+        var request = new sn_ws.RESTMessageV2();
+        request.setEndpoint(url);
+        request.setHttpMethod('PUT');
+        request.setRequestHeader('Content-Type', 'application/json');
+
+        // Set the body of the request
+        request.setRequestBody(JSON.stringify(exportData));
+
+        // Optionally set AWS authentication here (Signature V4)
+
+        // Send the request
+        var response = request.execute();
+        var responseBody = response.getBody();
+        var statusCode = response.getStatusCode();
+
+        if (statusCode == 200) {
+            gs.info('Backup uploaded successfully: ' + responseBody);
+        } else {
+            gs.error('Failed to upload backup: ' + statusCode + ' ' + responseBody);
+        }
+    },
+
+    type: 'S3Backup'
+};```
+
+Authentication: Implement AWS Signature V4 authentication for secure access to S3.
+
+Automation Setup:
+Schedule the backup process using a Scheduled Job in ServiceNow that calls the uploadBackup method.
+
+Monitoring and Reporting:
+Log success and error messages using gs.info and gs.error for monitoring.
+
+Testing and Validation:
+Conduct tests to ensure that backups are uploaded successfully and that restoration procedures work as intended.
